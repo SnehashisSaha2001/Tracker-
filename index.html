@@ -914,11 +914,25 @@
         }
     });
 
-    showSection('login');
-    // Hide sidebar buttons until logged in
-    document.querySelectorAll('.sidebar button:not(#loginBtn)').forEach(btn => btn.style.display = 'none');
-    document.getElementById('loginBtn').style.display = 'block';
-    document.getElementById('logoutBtn').style.display = 'none';
+    // --- PERSISTENT LOGIN MODIFICATION START ---
+    const storedRole = localStorage.getItem('currentUserRole');
+    const storedEmployeeId = localStorage.getItem('currentEmployeeId');
+
+    if (storedRole && storedEmployeeId) {
+        currentUserRole = storedRole;
+        currentEmployeeId = storedEmployeeId;
+        // Automatically log in the user
+        login(); // Call the login function which now handles UI updates based on global state
+        showAlert('Welcome back! You were automatically logged in.');
+    } else {
+        // No stored session, show login screen
+        showSection('login');
+        // Hide sidebar buttons until logged in
+        document.querySelectorAll('.sidebar button:not(#loginBtn)').forEach(btn => btn.style.display = 'none');
+        document.getElementById('loginBtn').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'none';
+    }
+    // --- PERSISTENT LOGIN MODIFICATION END ---
 
     document.getElementById('login-role').addEventListener('change', function() {
         const passwordGroup = document.getElementById('password-group');
@@ -1044,6 +1058,10 @@
 
           currentUserRole = 'employee';
           currentEmployeeId = employeeIdInput;
+          // --- PERSISTENT LOGIN MODIFICATION START ---
+          localStorage.setItem('currentUserRole', currentUserRole);
+          localStorage.setItem('currentEmployeeId', currentEmployeeId);
+          // --- PERSISTENT LOGIN MODIFICATION END ---
           showAlert(`Employee ${employeeIdInput} login successful!`);
           login();
 
@@ -1088,6 +1106,10 @@
 
           currentEmployeeId = adminUsernameInput;
           currentUserRole = 'admin';
+          // --- PERSISTENT LOGIN MODIFICATION START ---
+          localStorage.setItem('currentUserRole', currentUserRole);
+          localStorage.setItem('currentEmployeeId', currentEmployeeId);
+          // --- PERSISTENT LOGIN MODIFICATION END ---
           showAlert(`Admin ${adminUsernameInput} login successful!`);
           login();
       }
@@ -1122,6 +1144,10 @@
   }
 
   function logout() {
+      // --- PERSISTENT LOGIN MODIFICATION START ---
+      localStorage.removeItem('currentUserRole');
+      localStorage.removeItem('currentEmployeeId');
+      // --- PERSISTENT LOGIN MODIFICATION END ---
       currentUserRole = null;
       currentEmployeeId = null;
       stopLocationTracking(); // Ensure location tracking stops on logout
