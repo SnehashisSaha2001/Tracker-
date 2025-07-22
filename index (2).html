@@ -286,6 +286,7 @@
     #state .form-group select {
       background: #324a5f;
       color: #fff;
+      border: none;
     }
     #state button[type="submit"] {
       background: #28a745;
@@ -499,15 +500,14 @@
                     <label for="login-admin-username">Admin Username</label>
                     <input type="text" id="login-admin-username" class="form-control" placeholder="Enter Admin Username (e.g., ADM-YourName)">
                 </div>
-                <!-- Password field (visible for both roles, but required differently) -->
-                <div class="form-group" id="password-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required>
+                <!-- NEW: Mobile Number Input -->
+                <div class="form-group" id="mobile-number-group">
+                    <label for="login-mobile-number">Mobile Number</label>
+                    <input type="tel" id="login-mobile-number" class="form-control" placeholder="Enter your mobile number" required>
                 </div>
-                <!-- Mobile Number field (visible for both roles, but required differently) -->
-                <div class="form-group" id="employee-mobile-group">
-                    <label for="login-employee-mobile">Registered Mobile No.</label>
-                    <input type="tel" id="login-employee-mobile" class="form-control" placeholder="Enter your registered mobile number" required>
+                <div class="form-group" id="password-group" style="display: none;">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Enter your password">
                 </div>
                 <div class="form-group">
                     <label for="login-role">Select Role</label>
@@ -564,7 +564,7 @@
             📍 Location Status: <span id="location-status-text">Inactive</span>
         </div>
         <div id="current-location" style="margin-bottom: 20px;">
-            <div style="display: flex; justify-content: center; gap: 20px;">
+            <div style="display: flex; gap: 20px;">
                 <div style="flex: 1;">
                     <strong>Address:</strong> <span id="current-address">Waiting for location...</span><br>
                     <strong>Latitude:</strong> <span id="latitude">N/A</span><br>
@@ -856,7 +856,7 @@
         </div>
         <div class="form-group">
           <label for="new-admin-mobile">Mobile No</label>
-          <input type="tel" id="new-admin-mobile" placeholder="9876543210" required>
+          <input type="tel" id="new-admin-mobile" placeholder="9876543210">
         </div>
         <div class="form-group">
           <label for="new-admin-email">Email</label>
@@ -880,36 +880,40 @@
   let currentUserRole = null; // 'admin' or 'employee'
   let currentEmployeeId = null; // The ID of the logged-in employee
 
-  // --- Pre-defined Employee Data ---
-  // IMPORTANT: Passwords are now unique for each entry.
-  // boundDeviceId is NOT set here, it will be set on first login from a device.
+  // Define allowed admin usernames and their common password
+  // IMPORTANT: In a real application, this data should be stored securely on a server.
+  const adminCommonPassword = "scube@1234"; // Common password for all admins
+
+  // --- Pre-defined Employee Data (with Mobile Numbers from PDF) ---
   const initialEmployeeData = [
-    { name: "Snehasish Paul", employeeId: "SCS-03318", mobileNo: "8017892062", emailId: "N/A", password: "password1", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Zuber Alam", employeeId: "SCS-01102", mobileNo: "9891377424", emailId: "N/A", password: "password2", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Bharath Kumar TM", employeeId: "SCS-08017", mobileNo: "9844722312", emailId: "N/A", password: "password3", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Shiva Kumarar", employeeId: "SCS-08016", mobileNo: "9611452782", emailId: "N/A", password: "password4", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Tapas Kumar Dinda", employeeId: "SCS-03317", mobileNo: "9804443387", emailId: "N/A", password: "password5", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Gopal Chandra Biswas", employeeId: "SCS-03313", mobileNo: "9432095612", emailId: "N/A", password: "password6", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Saugat Majumdar", employeeId: "SCS-03303", mobileNo: "9831259094", emailId: "N/A", password: "password7", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Chitrarath Senapati", employeeId: "SCS-03306", mobileNo: "9831282190", emailId: "N/A", password: "password8", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Sukhendu Shekhar Mondal", employeeId: "SCS-03316", mobileNo: "7278942388", emailId: "N/A", password: "password9", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Tarun Kumar Paramanik", employeeId: "SCS-03308", mobileNo: "9831650969", emailId: "N/A", password: "password10", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Kartik Ghanta", employeeId: "SCS-03309", mobileNo: "7074099074", emailId: "N/A", password: "password11", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Provat Naskar", employeeId: "SCS-03314", mobileNo: "7044486602", emailId: "N/A", password: "password12", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Ravi Kumari", employeeId: "SCS-01103", mobileNo: "9548362042", emailId: "N/A", password: "password13", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Abhilash Sarangi", employeeId: "SCS-067403", mobileNo: "8763523636", emailId: "N/A", password: "password14", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Shubhadarshani Nath", employeeId: "SCS-067404", mobileNo: "8763523636", emailId: "N/A", password: "password15", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' }
+    { name: "Snehasish Paul", employeeId: "SCS-03318", mobileNo: "8017892062", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Zuber Alam", employeeId: "SCS-01102", mobileNo: "9891377424", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Bharath Kumar TM", employeeId: "SCS-08017", mobileNo: "9844722312", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Shiva Kumarar", employeeId: "SCS-08016", mobileNo: "9611452782", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Tapas Kumar Dinda", employeeId: "SCS-03317", mobileNo: "9804443387", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Gopal Chandra Biswas", employeeId: "SCS-03313", mobileNo: "9432095612", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Saugat Majumdar", employeeId: "SCS-03303", mobileNo: "9831259094", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Chitrarath Senapati", employeeId: "SCS-03306", mobileNo: "9831282190", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Sukhendu Shekhar Mondal", employeeId: "SCS-03316", mobileNo: "7278942388", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Tarun Kumar Paramanik", employeeId: "SCS-03308", mobileNo: "9831650969", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Kartik Ghanta", employeeId: "SCS-03309", mobileNo: "7074099074", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Provat Naskar", employeeId: "SCS-03314", mobileNo: "7044486602", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Ravi", employeeId: "SCS-01103", mobileNo: "9548362042", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Abhilash Sarangi", employeeId: "SCS-067403", mobileNo: "8763523636", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
+    { name: "Shubhadarshani Nath", employeeId: "SCS-067404", mobileNo: "7978143152", emailId: "N/A", password: "scube@4321", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' }
   ];
 
-  // --- Pre-defined Admin Data ---
-  // boundDeviceId is NOT set here, it will be set on first login from a device.
+  // --- Pre-defined Admin Data (with Mobile Numbers from PDF) ---
   const initialAdminData = [
-    { name: "Snehashis", employeeId: "ADM-Snehashis", mobileNo: "9876543210", emailId: "snehashis@example.com", password: "adminpass1", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Shoaib", employeeId: "ADM-Shoaib", mobileNo: "9876543211", emailId: "shoaib@example.com", password: "adminpass2", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Komal", employeeId: "ADM-Komal", mobileNo: "9876543212", emailId: "komal@example.com", password: "adminpass3", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "S.S Singh", employeeId: "ADM-S.S Singh", mobileNo: "9876543213", emailId: "sssingh@example.com", password: "adminpass4", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' },
-    { name: "Sandeep", employeeId: "ADM-Sandeep", mobileNo: "9876543214", emailId: "sandeep@example.com", password: "adminpass5", photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' }
+    { adminId: "ADM-S.S Singh", name: "Shanti Saran Singh", mobileNo: "9831038262" },
+    { adminId: "ADM-Sandeep", name: "Sandeep Sarkar", mobileNo: "9831036858" },
+    { adminId: "ADM-Snehashis", name: "Snehashis Saha", mobileNo: "9330199588" },
+    { adminId: "ADM-Komal", name: "Komal Gupta", mobileNo: "7003045682" },
+    { adminId: "ADM-Shoaib", name: "MD Shoaib Raza", mobileNo: "9831259095" }
   ];
+
+  // List of allowed admin usernames (for password check)
+  const allowedAdminUsernames = initialAdminData.map(admin => admin.adminId);
 
 
   // Initial load - show login screen
@@ -917,24 +921,27 @@
     // Pre-populate employee data if not already present in localStorage
     initialEmployeeData.forEach(emp => {
         if (!localStorage.getItem(`userProfile_${emp.employeeId}`)) {
-            // Ensure boundDeviceId is NOT set during initial pre-population
-            const empToSave = { ...emp };
-            delete empToSave.boundDeviceId;
-            saveUserProfile(empToSave);
-            console.log(`Pre-populated employee profile for: ${emp.employeeId}`);
+            saveUserProfile(emp); // Use the existing saveUserProfile function
+            console.log(`Pre-populated profile for employee: ${emp.employeeId}`);
         }
     });
 
-    // Pre-populate admin data if not already present in localStorage
+    
+    // Pre-populate admin data and always overwrite to avoid corruption
     initialAdminData.forEach(admin => {
-        if (!localStorage.getItem(`userProfile_${admin.employeeId}`)) {
-            // Ensure boundDeviceId is NOT set during initial pre-population
-            const adminToSave = { ...admin };
-            delete adminToSave.boundDeviceId;
-            saveUserProfile(adminToSave);
-            console.log(`Pre-populated admin profile for: ${admin.employeeId}`);
-        }
+        const adminProfile = {
+            employeeId: admin.adminId,
+            name: admin.name,
+            mobileNo: admin.mobileNo,
+            emailId: 'N/A',
+            password: adminCommonPassword,
+            photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png'
+        };
+        localStorage.setItem(`userProfile_${admin.adminId}`, JSON.stringify(adminProfile));
+        console.log(`Force-loaded admin profile: ${admin.adminId}`);
     });
+
+
 
     showSection('login');
     // Hide sidebar buttons until logged in
@@ -949,52 +956,49 @@
         const loginEmployeeIdInput = document.getElementById('login-employee-id');
         const adminUsernameGroup = document.getElementById('admin-username-group');
         const loginAdminUsernameInput = document.getElementById('login-admin-username');
-        const employeeMobileGroup = document.getElementById('employee-mobile-group');
-        const loginEmployeeMobileInput = document.getElementById('login-employee-mobile');
-
+        const mobileNumberGroup = document.getElementById('mobile-number-group'); // NEW
+        const loginMobileNumberInput = document.getElementById('login-mobile-number'); // NEW
 
         if (this.value === 'admin') {
-            employeeIdGroup.style.display = 'none';
+            if (employeeIdGroup) employeeIdGroup.style.display = 'none';
             loginEmployeeIdInput.removeAttribute('required');
             loginEmployeeIdInput.value = '';
 
             adminUsernameGroup.style.display = 'block';
             loginAdminUsernameInput.setAttribute('required', 'required');
 
-            passwordGroup.style.display = 'block'; // Password always visible
+            mobileNumberGroup.style.display = 'block'; // NEW
+            loginMobileNumberInput.setAttribute('required', 'required'); // NEW
+
+            passwordGroup.style.display = 'block';
             loginPasswordInput.setAttribute('required', 'required');
-
-            employeeMobileGroup.style.display = 'block'; // Mobile always visible for admin
-            loginEmployeeMobileInput.setAttribute('required', 'required');
-
         } else if (this.value === 'employee') {
-            employeeIdGroup.style.display = 'block';
+            if (employeeIdGroup) employeeIdGroup.style.display = 'block';
             loginEmployeeIdInput.setAttribute('required', 'required');
-            adminUsernameGroup.style.display = 'none';
             loginAdminUsernameInput.removeAttribute('required');
             loginAdminUsernameInput.value = '';
 
-            passwordGroup.style.display = 'block'; // Password always visible
+            adminUsernameGroup.style.display = 'none';
+
+            mobileNumberGroup.style.display = 'block'; // NEW
+            loginMobileNumberInput.setAttribute('required', 'required'); // NEW
+
+            passwordGroup.style.display = 'block';
             loginPasswordInput.setAttribute('required', 'required');
-
-            employeeMobileGroup.style.display = 'block'; // Mobile always visible for employee
-            loginEmployeeMobileInput.setAttribute('required', 'required');
-
         } else { // Default or no role selected
-            // Default to employee fields, but clear values and remove required for password/mobile
-            employeeIdGroup.style.display = 'block';
+            if (employeeIdGroup) employeeIdGroup.style.display = 'block';
             loginEmployeeIdInput.setAttribute('required', 'required');
-            adminUsernameGroup.style.display = 'none';
             loginAdminUsernameInput.removeAttribute('required');
             loginAdminUsernameInput.value = '';
 
-            passwordGroup.style.display = 'block'; // Password always visible
-            loginPasswordInput.removeAttribute('required'); // Not required by default
-            loginPasswordInput.value = '';
+            adminUsernameGroup.style.display = 'none';
 
-            employeeMobileGroup.style.display = 'block'; // Mobile always visible
-            loginEmployeeMobileInput.removeAttribute('required'); // Not required by default
-            loginEmployeeMobileInput.value = '';
+            mobileNumberGroup.style.display = 'block'; // NEW - Keep mobile number visible by default
+            loginMobileNumberInput.setAttribute('required', 'required'); // NEW
+
+            passwordGroup.style.display = 'none';
+            loginPasswordInput.removeAttribute('required');
+            loginPasswordInput.value = '';
         }
     });
 
@@ -1006,15 +1010,15 @@
       const employeeIdInput = document.getElementById('login-employee-id').value.trim();
       const adminUsernameInput = document.getElementById('login-admin-username').value.trim();
       const passwordInput = document.getElementById('login-password').value;
+      const mobileNumberInput = document.getElementById('login-mobile-number').value.trim(); // NEW: Get mobile number input
       const roleSelect = document.getElementById('login-role').value;
-      const employeeMobileInput = document.getElementById('login-employee-mobile').value.trim(); // Get mobile input
 
       if (!roleSelect) {
           showAlert('Please select a Role.');
           return;
       }
 
-      const loginData = { employeeIdInput, adminUsernameInput, passwordInput, roleSelect, employeeMobileInput };
+      const loginData = { employeeIdInput, adminUsernameInput, passwordInput, mobileNumberInput, roleSelect }; // NEW: Pass mobileNumberInput
 
       showConfirm('Are you sure you want to log in?', (confirmed) => {
           if (confirmed) {
@@ -1026,140 +1030,129 @@
   });
 
   /**
-   * Generates or retrieves a unique device ID from localStorage.
-   * This ID is used for client-side device binding.
-   * @returns {string} A unique UUID for the current browser/device.
+   * Checks if an employee ID is authorized to log in.
+   * An employee is authorized if a user profile exists for their ID in localStorage.
+   * This function acts as the central authorization check for employees.
+   * @param {string} employeeId The employee ID to check for authorization.
+   * @returns {boolean} True if the employee is authorized (profile exists), false otherwise.
    */
-  function getDeviceId() {
-      let deviceId = localStorage.getItem('appDeviceId');
-      if (!deviceId) {
-          deviceId = crypto.randomUUID(); // Generates a UUID
-          localStorage.setItem('appDeviceId', deviceId);
+  function isEmployeeAuthorized(employeeId) {
+      // Employee IDs must start with 'SCS-' or 'ADM-'
+      if (!employeeId || (!employeeId.startsWith('SCS-') && !employeeId.startsWith('ADM-'))) {
+          return false;
       }
-      return deviceId;
-  }
-
-  /**
-   * Checks if a user ID (employee or admin) is authorized to log in.
-   * A user is authorized if a user profile exists for their ID in localStorage.
-   * This function acts as the central authorization check.
-   * @param {string} userId The user ID (employeeId or adminUsername) to check for authorization.
-   * @returns {boolean} True if the user is authorized (profile exists), false otherwise.
-   */
-  function isUserAuthorized(userId) {
-      // Check if a user profile exists in localStorage for this user ID
-      return localStorage.getItem(`userProfile_${userId}`) !== null;
+      // Check if a user profile exists in localStorage for this employee ID
+      // The userProfile_ prefix is used when saving employee profiles.
+      return localStorage.getItem(`userProfile_${employeeId}`) !== null;
   }
 
   function processLogin(loginData) {
-      const { employeeIdInput, adminUsernameInput, passwordInput, roleSelect, employeeMobileInput } = loginData;
-      const currentDeviceId = getDeviceId(); // Get the device ID of the current browser
+      const { employeeIdInput, adminUsernameInput, passwordInput, mobileNumberInput, roleSelect } = loginData; // NEW: Destructure mobileNumberInput
 
       if (roleSelect === 'employee') {
           if (!employeeIdInput) {
               showAlert('Please enter Employee ID.');
               return;
           }
+          // Basic format validation (SCS- prefix)
           if (!employeeIdInput.startsWith('SCS-')) {
               showAlert('Employee ID must start with "SCS-" (e.g., SCS-12345 or SCS-123456).');
               return;
           }
-          if (!passwordInput) {
-              showAlert('Please enter your Password.');
-              return;
-          }
-          if (!employeeMobileInput) {
-              showAlert('Please enter your Registered Mobile Number.');
-              return;
-          }
 
+          // --- CRITICAL NEW AUTHORIZATION CHECK ---
+          // Check if the employee ID is authorized (i.e., has a profile created by an admin or pre-loaded)
+          if (!isEmployeeAuthorized(employeeIdInput)) {
+              showAlert('Employee ID not authorized. Please check your ID or contact your administrator.');
+              return;
+          }
+          // --- END CRITICAL NEW AUTHORIZATION CHECK ---
+
+          // Retrieve the stored profile to get the correct password and mobile number for this specific employee
           const employeeProfile = getUserProfile(employeeIdInput);
 
-          if (!employeeProfile) {
-              showAlert('Employee ID not found. Please check your ID.');
+          // If for some reason the profile exists but is empty or doesn't have a password/mobileNo
+          if (!employeeProfile || !employeeProfile.password || !employeeProfile.mobileNo) { // NEW: Check for mobileNo
+              showAlert('Employee profile data incomplete. Please contact your administrator.');
               return;
           }
 
-          // 1. Password Verification
+          // NEW: Compare the entered mobile number with the mobile number stored in the employee's profile
+          if (mobileNumberInput !== employeeProfile.mobileNo) {
+              showAlert('Incorrect mobile number for Employee login.');
+              return;
+          }
+
+          // Compare the entered password with the password stored in the employee's profile
           if (passwordInput !== employeeProfile.password) {
-              showAlert('Incorrect Password.');
+              showAlert('Incorrect password for Employee login.');
               return;
-          }
-
-          // 2. Mobile Number Verification
-          if (employeeMobileInput !== employeeProfile.mobileNo) {
-              showAlert('Incorrect Registered Mobile Number.');
-              return;
-          }
-
-          // 3. Device Binding and Anomaly Detection
-          if (!employeeProfile.boundDeviceId) {
-              // First login for this employee, bind the current device
-              employeeProfile.boundDeviceId = currentDeviceId;
-              saveUserProfile(employeeProfile); // Save the updated profile with the new boundDeviceId
-              showAlert(`Employee ${employeeIdInput} login successful! This device is now bound to your profile.`);
-          } else if (employeeProfile.boundDeviceId !== currentDeviceId) {
-              // Device mismatch detected! This is the client-side "hint for the boss".
-              showAlert(`WARNING: Login for Employee ${employeeIdInput} from an UNRECOGNIZED DEVICE!`);
-              console.warn(`ANOMALY DETECTED: Employee ${employeeIdInput} logged in from a new device. Current Device ID: ${currentDeviceId}, Stored Device ID: ${employeeProfile.boundDeviceId}`);
-              // For a real system, this would trigger a server-side alert to the boss.
-              // You might also consider re-binding the device here, or forcing a stronger challenge.
-              // For this demo, we allow login but show the warning.
           }
 
           currentUserRole = 'employee';
           currentEmployeeId = employeeIdInput;
-          login(); // Proceed with login after all checks and warnings
+          showAlert(`Employee ${employeeIdInput} login successful!`);
+          login();
 
       } else if (roleSelect === 'admin') {
           if (!adminUsernameInput) {
               showAlert('Please enter Admin Username.');
               return;
           }
-          if (!isUserAuthorized(adminUsernameInput)) {
-              showAlert('Admin Username not authorized. Please check your username or add it via the "Add Admin" feature if you are an existing admin.');
-              return;
-          }
-          if (!passwordInput) {
-              showAlert('Please enter your Password.');
-              return;
-          }
-          if (!employeeMobileInput) { // Use employeeMobileInput for admin's mobile number
-              showAlert('Please enter your Registered Mobile Number.');
+
+          let adminProfile = getUserProfile(adminUsernameInput);
+          let isPredefinedAdmin = allowedAdminUsernames.includes(adminUsernameInput);
+
+          if (!isPredefinedAdmin && Object.keys(adminProfile).length === 0) {
+              showAlert('Admin Username not found. Please check your username or add it via the "Add Admin" feature if you are an existing admin.');
               return;
           }
 
-          const adminProfile = getUserProfile(adminUsernameInput);
+          // For predefined admins, check against the common password and mobile number
+          if (isPredefinedAdmin) {
+              // Ensure a profile exists for predefined admins upon first login, and get their mobile number
+              if (Object.keys(adminProfile).length === 0) {
+                  const foundAdminData = initialAdminData.find(admin => admin.adminId === adminUsernameInput);
+                  adminProfile = {
+                      employeeId: adminUsernameInput,
+                      name: foundAdminData ? foundAdminData.name : adminUsernameInput.replace('ADM-', ''),
+                      mobileNo: foundAdminData ? foundAdminData.mobileNo : 'N/A', // Get mobile from initial data
+                      emailId: 'N/A',
+                      password: adminCommonPassword
+                  };
+                  saveUserProfile(adminProfile);
+              }
 
-          if (!adminProfile || !adminProfile.password) {
-              showAlert('Admin profile data incomplete. Please contact your administrator.');
-              return;
+              // NEW: Mobile Number Verification for predefined admins
+              if (mobileNumberInput !== adminProfile.mobileNo) {
+                  showAlert('Incorrect mobile number for Admin login.');
+                  return;
+              }
+
+              if (passwordInput !== adminCommonPassword) {
+                  showAlert('Incorrect password for Admin login.');
+                  return;
+              }
+          } else {
+              // For dynamically added admins, check against their specific password and mobile number
+              if (!adminProfile.mobileNo) { // NEW: Check for mobileNo
+                  showAlert('Admin profile data incomplete. Please contact your administrator.');
+                  return;
+              }
+              // NEW: Mobile Number Verification for dynamically added admins
+              if (mobileNumberInput !== adminProfile.mobileNo) {
+                  showAlert('Incorrect mobile number for Admin login.');
+                  return;
+              }
+              if (passwordInput !== adminProfile.password) {
+                  showAlert('Incorrect password for Admin login.');
+                  return;
+              }
           }
 
-          // 1. Password Verification
-          if (passwordInput !== adminProfile.password) {
-              showAlert('Incorrect password for Admin login.');
-              return;
-          }
-
-          // 2. Mobile Number Verification for Admin
-          if (employeeMobileInput !== adminProfile.mobileNo) {
-              showAlert('Incorrect Registered Mobile Number for Admin.');
-              return;
-          }
-
-          // 3. Device Binding and Anomaly Detection for Admin
-          if (!adminProfile.boundDeviceId) {
-              adminProfile.boundDeviceId = currentDeviceId;
-              saveUserProfile(adminProfile);
-              showAlert(`Admin ${adminUsernameInput} login successful! This device is now bound to your profile.`);
-          } else if (adminProfile.boundDeviceId !== currentDeviceId) {
-              showAlert(`WARNING: Login for Admin ${adminUsernameInput} from an UNRECOGNIZED DEVICE!`);
-              console.warn(`ANOMALY DETECTED: Admin ${adminUsernameInput} logged in from a new device. Current Device ID: ${currentDeviceId}, Stored Device ID: ${adminProfile.boundDeviceId}`);
-          }
-
-          currentUserRole = 'admin';
           currentEmployeeId = adminUsernameInput;
+          currentUserRole = 'admin';
+          showAlert(`Admin ${adminUsernameInput} login successful!`);
           login();
       }
   }
@@ -2423,7 +2416,7 @@
     document.getElementById('profile-mobile-no').value = profile.mobileNo || '';
     document.getElementById('profile-email-id').value = profile.emailId || '';
     document.getElementById('profile-password').value = profile.password || '';
-    document.getElementById('profile-preview').src = profile.photoUrl || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/99a20669-ecb4-4325-491b8dac39a9.png';
+    document.getElementById('profile-preview').src = profile.photoUrl || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/99a20669-ecb4-4325-a970-491b8dac39a9.png';
 
     updateSidebarProfile(profile.name, currentEmployeeId, profile.photoUrl);
   }
@@ -2443,20 +2436,20 @@
     const photoFile = document.getElementById('upload-photo').files[0];
 
     let currentProfile = getUserProfile(employeeId);
-    let photoUrl = currentProfile.photoUrl || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/99a20669-ecb4-4325-491b8dac39a9.png';
+    let photoUrl = currentProfile.photoUrl || 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/99a20669-ecb4-4325-a970-491b8dac39a9.png';
 
     if (photoFile) {
       const reader = new FileReader();
       reader.onload = (event) => {
         photoUrl = event.target.result;
-        const updatedProfile = { ...currentProfile, name, mobileNo, emailId, password, photoUrl }; // Merge with existing profile to keep boundDeviceId
+        const updatedProfile = { employeeId, name, mobileNo, emailId, password, photoUrl };
         saveUserProfile(updatedProfile);
         showAlert('Profile saved successfully!');
         updateSidebarProfile(name, employeeId, photoUrl);
       };
       reader.readAsDataURL(photoFile);
     } else {
-      const updatedProfile = { ...currentProfile, name, mobileNo, emailId, password, photoUrl }; // Merge with existing profile to keep boundDeviceId
+      const updatedProfile = { employeeId, name, mobileNo, emailId, password, photoUrl };
       saveUserProfile(updatedProfile);
       showAlert('Profile saved successfully!');
       updateSidebarProfile(name, employeeId, photoUrl);
@@ -2576,13 +2569,6 @@
                   saveUserProfile(profile);
                   showAlert('Admin email updated.');
               }
-              // Allow password change for admins
-              const newPassword = prompt(`Edit password for Admin (${employeeId}):`, profile.password);
-              if (newPassword !== null && newPassword.trim() !== '') {
-                  profile.password = newPassword.trim();
-                  saveUserProfile(profile);
-                  showAlert('Admin password updated.');
-              }
               loadAdminDetails();
           } else {
               const newName = prompt(`Edit name for ${employeeId}:`, profile.name);
@@ -2604,13 +2590,6 @@
                   profile.emailId = newEmail.trim();
                   saveUserProfile(profile);
                   showAlert('Employee email updated.');
-              }
-              // Allow password change for employees
-              const newPassword = prompt(`Edit password for ${employeeId}:`, profile.password);
-              if (newPassword !== null && newPassword.trim() !== '') {
-                  profile.password = newPassword.trim();
-                  saveUserProfile(profile);
-                  showAlert('Employee password updated.');
               }
               loadEmployeeDetails();
           }
@@ -2646,20 +2625,14 @@
       showAlert('Employee ID must be in format SCS- followed by 5 or 6 digits (e.g., SCS-12345 or SCS-123456).');
       return;
     }
-    // Ensure mobile number is provided
-    if (!mobile) {
-        showAlert('Mobile Number is required for new employees.');
-        return;
-    }
 
     const newProfile = {
       employeeId: id,
       name: name,
-      mobileNo: mobile,
+      mobileNo: mobile, // Save mobile number
       emailId: email,
       password: password,
       photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png'
-      // boundDeviceId will be set on first login
     };
 
     if (localStorage.getItem(`userProfile_${id}`)) {
@@ -2694,7 +2667,7 @@
 
     const username = document.getElementById('new-admin-username').value.trim().toUpperCase();
     const name = document.getElementById('new-admin-name').value.trim();
-    const mobile = document.getElementById('new-admin-mobile').value.trim();
+    const mobile = document.getElementById('new-admin-mobile').value.trim(); // NEW: Get mobile number
     const email = document.getElementById('new-admin-email').value.trim();
     const password = document.getElementById('new-admin-password').value;
 
@@ -2702,9 +2675,10 @@
       showAlert('Admin Username must be in format ADM- followed by letters and spaces (e.g., ADM-JohnDoe).');
       return;
     }
-    // Ensure mobile number is provided
-    if (!mobile) {
-        showAlert('Mobile Number is required for new admins.');
+
+    // Check if the username is already in the allowedAdminUsernames array
+    if (allowedAdminUsernames.includes(username)) {
+        showAlert('This Admin Username is already pre-defined in the system.');
         return;
     }
 
@@ -2717,11 +2691,10 @@
     const newAdminProfile = {
       employeeId: username, // Using employeeId field for admin username
       name: name,
-      mobileNo: mobile,
+      mobileNo: mobile, // NEW: Save mobile number
       emailId: email,
       password: password,
       photoUrl: 'https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/default-employee.png' // Default photo for new admins
-      // boundDeviceId will be set on first login
     };
 
     saveUserProfile(newAdminProfile);
@@ -2738,6 +2711,12 @@
       }
       if (employeeId === currentEmployeeId) {
           showAlert('You cannot delete the currently logged-in Admin profile from this interface.');
+          return;
+      }
+      // Allow deletion of dynamically added admins (those not in the hardcoded list)
+      // For hardcoded admins, prevent deletion from this UI
+      if (employeeId.startsWith('ADM-') && allowedAdminUsernames.includes(employeeId)) {
+          showAlert('Pre-defined Admin profiles cannot be deleted from this section. They are hardcoded.');
           return;
       }
 
